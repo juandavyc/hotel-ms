@@ -1,0 +1,68 @@
+services:
+
+  configserver:
+    image: juandavyc/configserver:latest
+    mem_limit: 800m
+    ports:
+      - "8085:8085"
+    networks:
+      - juandavyc-network
+
+  hotels:
+    image: juandavyc/hotels:latest
+    mem_limit: 800m
+    ports:
+      - "8080:8080"
+    networks:
+      - juandavyc-network
+    depends_on:
+      - configserver
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      SPRING_PROFILES_NAME: default
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+
+  rooms:
+    image: juandavyc/rooms:latest
+    mem_limit: 800m
+    ports:
+      - "8081:8081"
+    networks:
+      - juandavyc-network
+    depends_on:
+      - configserver
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      SPRING_PROFILES_NAME: default
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+
+  reservations:
+    image: juandavyc/reservations:latest
+    mem_limit: 800m
+    ports:
+      - "8082:8082"
+    networks:
+      - juandavyc-network
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      SPRING_PROFILES_NAME: default
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+
+
+networks:
+  juandavyc-network:
