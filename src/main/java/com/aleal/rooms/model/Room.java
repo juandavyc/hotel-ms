@@ -16,10 +16,10 @@ public class Room {
 	@Id
 	@GeneratedValue(strategy = GenerationType.AUTO)
 	@Column(name="room_id")
-	private long roomId;
+	private Long roomId;
 	
 	@Column(name="hotel_id")
-	private long hotelId;
+	private Long hotelId;
 	
 	@Column(name="room_name")
 	private String roomName;

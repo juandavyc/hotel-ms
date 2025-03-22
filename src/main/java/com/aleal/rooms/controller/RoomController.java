@@ -8,7 +8,9 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.ObjectWriter;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RestController;
 
 import com.aleal.rooms.model.Room;
@@ -16,6 +18,7 @@ import com.aleal.rooms.services.IRoomService;
 
 @RestController
 @RequiredArgsConstructor
+@Slf4j
 public class RoomController {
 
 
@@ -25,8 +28,17 @@ public class RoomController {
 	
 	@GetMapping("rooms")
 	public List<Room> search(){
-		return (List<Room>) this.service.search();	
+		log.info("Searching reservations");
+		return (List<Room>) this.service.search();
 	}
+
+	@GetMapping("rooms/{id}")
+	public List<Room> fetchRoomById(@PathVariable Long id){
+		log.info("Searching reservations with id {}", id);
+		return (List<Room>) this.service.findRoomsByHotelId(id);
+	}
+
+
 
 	@GetMapping(path = "rooms/properties")
 	public String propertiesRoom() throws JsonProcessingException {
@@ -40,7 +52,11 @@ public class RoomController {
 				.build();
 
 		return ow.writeValueAsString(properties);
+
 	}
+
+
+
 
 
 
