@@ -1,5 +1,13 @@
 services:
 
+  zipkin:
+    image: openzipkin/zipkin
+    mem_limit: 800m
+    ports:
+      - "9411:9411"
+    networks:
+      - juandavyc-network
+
   configserver:
     image: juandavyc/configserver:latest
     mem_limit: 800m
@@ -7,6 +15,30 @@ services:
       - "8085:8085"
     networks:
       - juandavyc-network
+    environment:
+      SPRING_PROFILES_ACTIVE: prod
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+  eurekaserver:
+    image: juandavyc/eurekaserver:latest
+    container_name: eurekaserver
+    mem_limit: 800m
+    ports:
+      - "8065:8065"
+    networks:
+      - juandavyc-network
+    depends_on:
+      - configserver
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      SPRING_PROFILES_NAME: prod
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
 
   hotels:
     image: juandavyc/hotels:latest
@@ -26,6 +58,10 @@ services:
     environment:
       SPRING_PROFILES_NAME: prod
       SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8065/eureka/
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+
 
   rooms:
     image: juandavyc/rooms:latest
@@ -45,6 +81,8 @@ services:
     environment:
       SPRING_PROFILES_NAME: prod
       SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8065/eureka/
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
 
   reservations:
     image: juandavyc/reservations:latest
@@ -53,6 +91,8 @@ services:
       - "8082:8082"
     networks:
       - juandavyc-network
+    depends_on:
+      - configserver
     deploy:
       restart_policy:
         condition: on-failure
@@ -62,6 +102,33 @@ services:
     environment:
       SPRING_PROFILES_NAME: prod
       SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8065/eureka/
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
+
+  gatewayserver:
+    image: juandavyc/gatewayserver:latest
+    mem_limit: 800m
+    ports:
+      - "8066:8066"
+    networks:
+      - juandavyc-network
+    depends_on:
+      - configserver
+      - eurekaserver
+      - hotels
+      - rooms
+      - reservations
+    deploy:
+      restart_policy:
+        condition: on-failure
+        delay: 5s
+        max_attempts: 3
+        window: 120s
+    environment:
+      SPRING_PROFILES_NAME: prod
+      SPRING_CONFIG_IMPORT: configserver:http://configserver:8085/
+      EUREKA_CLIENT_SERVICEURL_DEFAULTZONE: http://eurekaserver:8065/eureka/
+      MANAGEMENT_ZIPKIN_TRACING_ENDPOINT: http://zipkin:9411/api/v2/spans
 
 
 networks:
